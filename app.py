@@ -94,7 +94,7 @@ def load_progress():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
             return json.load(f)
-    return {"start_date": None, "history": {}}
+    return {"start_date": None, "history": {}, "checkbox_states": {}}
 
 def save_progress(data):
     with open(DATA_FILE, "w") as f:
@@ -102,6 +102,12 @@ def save_progress(data):
 
 progress_store = load_progress()
 today = str(date.today())
+
+# ----------------------------
+# RESTORE CHECKBOX STATES
+# ----------------------------
+for key, value in progress_store.get("checkbox_states", {}).items():
+    st.session_state[key] = value
 
 # ----------------------------
 # DATA CONFIGURATION
@@ -164,11 +170,16 @@ remaining_minutes = total_minutes - completed_minutes
 progress_percent = (completed_minutes / total_minutes) * 100
 
 # ----------------------------
-# SAVE DAILY PROGRESS
+# SAVE CHECKBOX STATES & DAILY PROGRESS
 # ----------------------------
+progress_store["checkbox_states"] = {
+    key: value for key, value in st.session_state.items() if "_" in key
+}
+
 if progress_store["start_date"] is not None:
     progress_store["history"][today] = progress_percent
-    save_progress(progress_store)
+
+save_progress(progress_store)
 
 # ----------------------------
 # KPI CARDS
