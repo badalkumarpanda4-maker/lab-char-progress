@@ -32,33 +32,6 @@ progress_store = load_progress()
 today = str(date.today())
 
 # ----------------------------
-# CUSTOM STYLING
-# ----------------------------
-st.markdown("""
-<style>
-body { background-color: #0f172a; }
-
-.main-title {
-    font-size: 26px;
-    font-weight: 600;
-    color: #e2e8f0;
-}
-
-.subtitle {
-    font-size: 14px;
-    color: #94a3b8;
-}
-
-.section-title {
-    font-size: 18px;
-    font-weight: 500;
-    color: #38bdf8;
-    margin-top: 25px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ----------------------------
 # DATA CONFIGURATION
 # ----------------------------
 tests = {
@@ -80,8 +53,8 @@ devices = ["DUT1", "DUT2", "DUT3", "DUT4", "DUT5"]
 # ----------------------------
 # TITLE
 # ----------------------------
-st.markdown('<div class="main-title">Lab Characterization Dashboard</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Track completion status for each test and DUT</div>', unsafe_allow_html=True)
+st.title("Lab Characterization Dashboard")
+st.caption("Track completion status for each test and DUT")
 
 # ----------------------------
 # START SECTION
@@ -93,39 +66,72 @@ if progress_store["start_date"] is None:
         save_progress(progress_store)
         st.rerun()
 else:
-    st.markdown(
-        f"<div style='color:#94a3b8; font-size:13px;'>Started on: {progress_store['start_date']}</div>",
-        unsafe_allow_html=True
-    )
+    st.markdown(f"Started on: **{progress_store['start_date']}**")
+
+# ----------------------------
+# CHECKBOX MATRIX DATA COLLECTION
+# ----------------------------
+data = {}
+
+for test in tests:
+    data[test] = {}
+    for device in devices:
+        key = f"{test}_{device}"
+        if key not in st.session_state:
+            st.session_state[key] = False
+
+# ----------------------------
+# CALCULATIONS (BEFORE DISPLAY)
+# ----------------------------
+total_minutes = sum(tests.values()) * len(devices)
+
+completed_minutes = 0
+for test, minutes in tests.items():
+    for device in devices:
+        if st.session_state[f"{test}_{device}"]:
+            completed_minutes += minutes
+
+remaining_minutes = total_minutes - completed_minutes
+progress_percent = (completed_minutes / total_minutes) * 100
+
+# ----------------------------
+# SAVE DAILY PROGRESS
+# ----------------------------
+if progress_store["start_date"] is not None:
+    progress_store["history"][today] = progress_percent
+    save_progress(progress_store)
+
+# ----------------------------
+# ✅ OVERALL PROJECT STATUS (NOW AT TOP)
+# ----------------------------
+st.divider()
+st.subheader("Overall Project Status")
+st.progress(progress_percent / 100)
+st.markdown(f"**Completion: {progress_percent:.2f}%**")
+
+if progress_percent >= 100:
+    st.success("🎉 Your Full Characterization is Completed!")
+
+st.divider()
 
 # ----------------------------
 # CHECKBOX MATRIX + GRAPH SIDE BY SIDE
 # ----------------------------
 left_col, right_col = st.columns([2, 1])
 
-data = {}
-
 with left_col:
-
-    st.markdown('<div class="section-title">Test Completion Matrix</div>', unsafe_allow_html=True)
+    st.subheader("Test Completion Matrix")
 
     for test, minutes in tests.items():
-        st.markdown(
-            f"**{test}**  \n<span style='font-size:12px; color:#94a3b8'>{minutes} min per DUT</span>",
-            unsafe_allow_html=True
-        )
-
+        st.markdown(f"**{test}**  \n{minutes} min per DUT")
         cols = st.columns(len(devices))
-        data[test] = {}
 
         for i, device in enumerate(devices):
             key = f"{test}_{device}"
-            checked = cols[i].checkbox(device, key=key)
-            data[test][device] = checked
+            cols[i].checkbox(device, key=key)
 
 with right_col:
-
-    st.markdown('<div class="section-title">Progress Trend</div>', unsafe_allow_html=True)
+    st.subheader("Progress Trend")
 
     if progress_store["history"]:
         df = pd.DataFrame(
@@ -148,54 +154,16 @@ with right_col:
         st.altair_chart(chart, use_container_width=True)
 
 # ----------------------------
-# CALCULATIONS
-# ----------------------------
-total_minutes = sum(tests.values()) * len(devices)
-
-completed_minutes = 0
-for test, minutes in tests.items():
-    for device in devices:
-        if data[test][device]:
-            completed_minutes += minutes
-
-remaining_minutes = total_minutes - completed_minutes
-progress_percent = (completed_minutes / total_minutes) * 100
-
-# ----------------------------
-# SAVE DAILY PROGRESS
-# ----------------------------
-if progress_store["start_date"] is not None:
-    progress_store["history"][today] = progress_percent
-    save_progress(progress_store)
-
-# ----------------------------
-# PROGRESS BAR AT TOP
-# ----------------------------
-st.divider()
-st.markdown('<div class="section-title">Overall Project Status</div>', unsafe_allow_html=True)
-
-st.progress(progress_percent / 100)
-st.markdown(f"**Completion: {progress_percent:.2f}%**")
-
-# ----------------------------
-# COMPLETION POPUP
-# ----------------------------
-if progress_percent >= 100:
-    st.success("🎉 Your Full Characterization is Completed!")
-
-# ----------------------------
 # CONTROL BUTTONS
 # ----------------------------
 st.divider()
 col1, col2 = st.columns(2)
 
-# STOP CHARACTERIZATION
 if col1.button("Stop Characterization"):
     progress_store["start_date"] = None
     save_progress(progress_store)
     st.rerun()
 
-# CLEAR ALL CHECKBOXES
 if col2.button("Clear All"):
     for test in tests:
         for device in devices:
