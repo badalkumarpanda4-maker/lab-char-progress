@@ -237,14 +237,23 @@ if col1.button("Stop Characterization"):
     st.rerun()
 
 if col2.button("Clear All"):
-    # Reset session_state checkboxes
+    # Only clear checkboxes that are currently checked
     for test in tests:
         for device in devices:
             key = f"{test}_{device}"
-            st.session_state[key] = False
-    # Reset JSON checkbox_states
-    progress_store["checkbox_states"] = {f"{test}_{device}": False for test in tests for device in devices}
-    # Reset today's progress
-    progress_store["history"][today] = 0
+            if st.session_state.get(key, False):  # only clear if checked
+                st.session_state[key] = False
+    
+    # Update JSON to match session state
+    for key in progress_store["checkbox_states"]:
+        progress_store["checkbox_states"][key] = st.session_state.get(key, False)
+    
+    # Recalculate today's progress
+    total_completed = sum(
+        tests[t] for t in tests for d in devices
+        if st.session_state[f"{t}_{d}"]
+    )
+    progress_store["history"][today] = (total_completed / total_minutes) * 100
+    
     save_progress_file(progress_store)
     st.rerun()
