@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # ----------------------------
-# GLASS DARK THEME + STYLING (BRIGHT DUT LABELS)
+# GLASS DARK THEME + STYLING (FONT IMPROVEMENTS)
 # ----------------------------
 st.markdown("""
 <style>
@@ -24,7 +24,7 @@ st.markdown("""
     color: #f1f5f9;
 }
 
-/* Section Headers */
+/* Section Headers (smaller and readable) */
 h1 { font-size: 1.6rem !important; }
 h2 { font-size: 1.3rem !important; }
 h3 { font-size: 1.1rem !important; color: #38bdf8 !important; font-weight: 600; }
@@ -71,11 +71,24 @@ div[data-testid="stProgress"] > div > div {
 .kpi-card h3 { margin: 0; font-size: 1rem; color: #38bdf8; }
 .kpi-card h1 { margin: 0; font-size: 1.4rem; color: white; }
 
-/* Checkbox Labels (DUTs) - BRIGHT COLOR */
+/* Checkbox Labels (DUTs brighter) */
 [data-baseweb="checkbox"] label span {
     font-size: 0.95rem !important;
-    color: #f1fafc !important;  /* bright cyan/white */
+    color: #e2e8f0 !important;
     font-weight: 600;
+}
+
+/* Glow effect for DUT1 and DUT5 checkboxes */
+[data-baseweb="checkbox"] label span:has(input[id*="DUT1"]),
+[data-baseweb="checkbox"] label span:has(input[id*="DUT5"]) {
+    color: #34d399 !important; /* bright green text */
+    text-shadow: 0 0 8px #34d399, 0 0 16px #34d399, 0 0 24px #34d399;
+    font-weight: 700;
+    transition: 0.3s ease-in-out;
+}
+[data-baseweb="checkbox"] label span:has(input[id*="DUT1"]):hover,
+[data-baseweb="checkbox"] label span:has(input[id*="DUT5"]):hover {
+    text-shadow: 0 0 12px #34d399, 0 0 24px #34d399, 0 0 36px #34d399;
 }
 </style>
 """, unsafe_allow_html=True)
