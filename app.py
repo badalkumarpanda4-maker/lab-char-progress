@@ -189,9 +189,9 @@ with left_col:
         cols = st.columns(len(devices))
         for i, device in enumerate(devices):
             key = f"{test}_{device}"
-            # Display DUT label in light green
+            # Render DUT label in light green
             cols[i].markdown(f"<span style='color:#90ee90;font-weight:700'>{device}</span>", unsafe_allow_html=True)
-            # Checkbox without label (label is now rendered via markdown)
+            # Checkbox without label
             def callback(k=key):
                 progress_store["checkbox_states"][k] = st.session_state[k]
                 total_completed = sum(
@@ -237,7 +237,14 @@ if col1.button("Stop Characterization"):
     st.rerun()
 
 if col2.button("Clear All"):
+    # Reset session_state checkboxes
     for test in tests:
         for device in devices:
-            st.session_state[f"{test}_{device}"] = False
+            key = f"{test}_{device}"
+            st.session_state[key] = False
+    # Reset JSON checkbox_states
+    progress_store["checkbox_states"] = {f"{test}_{device}": False for test in tests for device in devices}
+    # Reset today's progress
+    progress_store["history"][today] = 0
+    save_progress_file(progress_store)
     st.rerun()
