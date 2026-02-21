@@ -31,13 +31,11 @@ progress_store = load_progress()
 today = str(date.today())
 
 # ----------------------------
-# CUSTOM STYLING (UNCHANGED)
+# CUSTOM STYLING
 # ----------------------------
 st.markdown("""
 <style>
-body {
-    background-color: #0f172a;
-}
+body { background-color: #0f172a; }
 
 .main-title {
     font-size: 26px;
@@ -64,22 +62,11 @@ body {
     border: 1px solid #334155;
     text-align: center;
 }
-
-.metric-title {
-    font-size: 13px;
-    color: #94a3b8;
-}
-
-.metric-value {
-    font-size: 20px;
-    font-weight: 600;
-    color: #f8fafc;
-}
 </style>
 """, unsafe_allow_html=True)
 
 # ----------------------------
-# DATA CONFIGURATION (UNCHANGED)
+# DATA CONFIGURATION
 # ----------------------------
 tests = {
     "PWM_SW_DELAY": 45,
@@ -98,13 +85,13 @@ tests = {
 devices = ["DUT1", "DUT2", "DUT3", "DUT4", "DUT5"]
 
 # ----------------------------
-# TITLE (UNCHANGED)
+# TITLE
 # ----------------------------
 st.markdown('<div class="main-title">Lab Characterization Dashboard</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Track completion status for each test and DUT</div>', unsafe_allow_html=True)
 
 # ----------------------------
-# START DATE SECTION
+# START SECTION
 # ----------------------------
 if progress_store["start_date"] is None:
     if st.button("Start Characterization Today"):
@@ -118,31 +105,49 @@ else:
         unsafe_allow_html=True
     )
 
-st.divider()
-
 # ----------------------------
-# CHECKBOX MATRIX (UNCHANGED)
+# CHECKBOX MATRIX + GRAPH SIDE BY SIDE
 # ----------------------------
-st.markdown('<div class="section-title">Test Completion Matrix</div>', unsafe_allow_html=True)
+left_col, right_col = st.columns([2, 1])
 
 data = {}
 
-for test, minutes in tests.items():
-    st.markdown(
-        f"**{test}**  \n<span style='font-size:12px; color:#94a3b8'>{minutes} min per DUT</span>",
-        unsafe_allow_html=True
-    )
+with left_col:
 
-    cols = st.columns(len(devices))
-    data[test] = {}
+    st.markdown('<div class="section-title">Test Completion Matrix</div>', unsafe_allow_html=True)
 
-    for i, device in enumerate(devices):
-        key = f"{test}_{device}"
-        checked = cols[i].checkbox(device, key=key)
-        data[test][device] = checked
+    for test, minutes in tests.items():
+        st.markdown(
+            f"**{test}**  \n<span style='font-size:12px; color:#94a3b8'>{minutes} min per DUT</span>",
+            unsafe_allow_html=True
+        )
+
+        cols = st.columns(len(devices))
+        data[test] = {}
+
+        for i, device in enumerate(devices):
+            key = f"{test}_{device}"
+            checked = cols[i].checkbox(device, key=key)
+            data[test][device] = checked
+
+with right_col:
+
+    st.markdown('<div class="section-title">Progress Trend</div>', unsafe_allow_html=True)
+
+    if progress_store["history"]:
+        df = pd.DataFrame(
+            list(progress_store["history"].items()),
+            columns=["Date", "Completion %"]
+        )
+
+        df = df.sort_values("Date")
+        df.set_index("Date", inplace=True)
+
+        # Fixed Y-axis 0 to 100
+        st.line_chart(df, y_range=[0, 100])
 
 # ----------------------------
-# CALCULATIONS (UNCHANGED LOGIC)
+# CALCULATIONS
 # ----------------------------
 total_minutes = sum(tests.values()) * len(devices)
 
@@ -155,12 +160,6 @@ for test, minutes in tests.items():
 remaining_minutes = total_minutes - completed_minutes
 progress_percent = (completed_minutes / total_minutes) * 100
 
-
-def format_time(minutes):
-    hrs = minutes // 60
-    mins = minutes % 60
-    return f"{hrs} hr {mins} min"
-
 # ----------------------------
 # SAVE DAILY PROGRESS
 # ----------------------------
@@ -169,40 +168,13 @@ if progress_store["start_date"] is not None:
     save_progress(progress_store)
 
 # ----------------------------
-# DASHBOARD METRICS (UNCHANGED DESIGN)
+# PROGRESS BAR AT TOP
 # ----------------------------
 st.divider()
 st.markdown('<div class="section-title">Overall Project Status</div>', unsafe_allow_html=True)
 
 st.progress(progress_percent / 100)
-
-col1, col2, col3 = st.columns(3)
-
-col1.markdown(f"""
-<div class="metric-card">
-    <div class="metric-title">Total Project Time</div>
-    <div class="metric-value">{format_time(total_minutes)}</div>
-</div>
-""", unsafe_allow_html=True)
-
-col2.markdown(f"""
-<div class="metric-card">
-    <div class="metric-title">Completed Time</div>
-    <div class="metric-value">{format_time(completed_minutes)}</div>
-</div>
-""", unsafe_allow_html=True)
-
-col3.markdown(f"""
-<div class="metric-card">
-    <div class="metric-title">Remaining Time</div>
-    <div class="metric-value">{format_time(remaining_minutes)}</div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown(
-    f"<div style='margin-top:15px; font-size:14px; color:#38bdf8;'>Completion: {progress_percent:.2f}%</div>",
-    unsafe_allow_html=True
-)
+st.markdown(f"**Completion: {progress_percent:.2f}%**")
 
 # ----------------------------
 # COMPLETION POPUP
@@ -211,18 +183,20 @@ if progress_percent >= 100:
     st.success("🎉 Your Full Characterization is Completed!")
 
 # ----------------------------
-# LINE CHART (DATE vs OVERALL %)
+# CONTROL BUTTONS
 # ----------------------------
 st.divider()
-st.markdown('<div class="section-title">Progress Trend</div>', unsafe_allow_html=True)
+col1, col2 = st.columns(2)
 
-if progress_store["history"]:
-    df = pd.DataFrame(
-        list(progress_store["history"].items()),
-        columns=["Date", "Completion %"]
-    )
+# STOP CHARACTERIZATION
+if col1.button("Stop Characterization"):
+    progress_store["start_date"] = None
+    save_progress(progress_store)
+    st.rerun()
 
-    df = df.sort_values("Date")
-    df.set_index("Date", inplace=True)
-
-    st.line_chart(df)
+# CLEAR ALL CHECKBOXES
+if col2.button("Clear All"):
+    for test in tests:
+        for device in devices:
+            st.session_state[f"{test}_{device}"] = False
+    st.rerun()
