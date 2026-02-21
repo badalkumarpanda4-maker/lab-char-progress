@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # ----------------------------
-# GLASS DARK THEME + STYLING (BRIGHT DUT LABELS)
+# GLASS DARK THEME + STYLING (ONLY CHECKBOX FIX UPDATED)
 # ----------------------------
 st.markdown("""
 <style>
@@ -71,12 +71,17 @@ div[data-testid="stProgress"] > div > div {
 .kpi-card h3 { margin: 0; font-size: 1rem; color: #38bdf8; }
 .kpi-card h1 { margin: 0; font-size: 1.4rem; color: white; }
 
-/* Checkbox Labels (DUTs) - BRIGHT COLOR */
-[data-baseweb="checkbox"] label span {
-    font-size: 0.95rem !important;
-    color: #f1fafc !important;  /* bright cyan/white */
-    font-weight: 600;
+/* ✅ FIX: FORCE DUT LABELS BRIGHT WHITE */
+.stCheckbox label {
+    color: #ffffff !important;
+    font-weight: 700 !important;
 }
+
+.stCheckbox label span {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -136,18 +141,16 @@ else:
     st.markdown(f"Started on: **{progress_store['start_date']}**")
 
 # ----------------------------
-# CHECKBOX MATRIX DATA COLLECTION
+# CHECKBOX STATE INIT
 # ----------------------------
-data = {}
 for test in tests:
-    data[test] = {}
     for device in devices:
         key = f"{test}_{device}"
         if key not in st.session_state:
             st.session_state[key] = False
 
 # ----------------------------
-# CALCULATIONS (BEFORE DISPLAY)
+# CALCULATIONS
 # ----------------------------
 total_minutes = sum(tests.values()) * len(devices)
 
@@ -168,12 +171,13 @@ if progress_store["start_date"] is not None:
     save_progress(progress_store)
 
 # ----------------------------
-# ✅ KPI CARDS TOP
+# KPI CARDS
 # ----------------------------
 st.divider()
 st.subheader("Overall Project Status")
 
 kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
+
 kpi_col1.markdown(f"""
 <div class="kpi-card">
 <h3>Total Tests</h3>
@@ -195,14 +199,15 @@ kpi_col3.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Traditional progress bar also kept
 st.progress(progress_percent / 100)
+
 if progress_percent >= 100:
     st.success("🎉 Your Full Characterization is Completed!")
+
 st.divider()
 
 # ----------------------------
-# CHECKBOX MATRIX + GRAPH SIDE BY SIDE
+# MATRIX + GRAPH
 # ----------------------------
 left_col, right_col = st.columns([2, 1])
 
@@ -225,20 +230,20 @@ with right_col:
         df["Date"] = pd.to_datetime(df["Date"])
         df = df.sort_values("Date")
 
-        # ----------------------------
-        # STYLED ALTair CHART
-        # ----------------------------
-        chart = alt.Chart(df).mark_line(point=alt.OverlayMarkDef(size=60), strokeWidth=3).encode(
+        chart = alt.Chart(df).mark_line(
+            point=alt.OverlayMarkDef(size=60),
+            strokeWidth=3
+        ).encode(
             x=alt.X("Date:T", title="Date"),
-            y=alt.Y("Completion %:Q", title="Completion %", scale=alt.Scale(domain=[0,100]))
+            y=alt.Y("Completion %:Q", title="Completion %",
+                    scale=alt.Scale(domain=[0,100]))
         ).configure_axis(
             labelColor="white",
-            titleColor="white",
-            labelFontSize=11,
-            titleFontSize=13
+            titleColor="white"
         ).configure_view(
             strokeWidth=0
         ).properties(height=300)
+
         st.altair_chart(chart, use_container_width=True)
 
 # ----------------------------
