@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # ----------------------------
-# GLASS DARK THEME + STYLING
+# GLASS DARK THEME + STYLING (FONT IMPROVEMENTS)
 # ----------------------------
 st.markdown("""
 <style>
@@ -24,10 +24,10 @@ st.markdown("""
     color: #f1f5f9;
 }
 
-/* Section Headers */
-h1 { font-size: 1.8rem !important; }
-h2 { font-size: 1.5rem !important; }
-h3 { font-size: 1.2rem !important; color: #38bdf8 !important; font-weight: 600; }
+/* Section Headers (smaller and readable) */
+h1 { font-size: 1.6rem !important; }
+h2 { font-size: 1.3rem !important; }
+h3 { font-size: 1.1rem !important; color: #38bdf8 !important; font-weight: 600; }
 
 /* Glass Card Effect */
 .block-container {
@@ -69,12 +69,13 @@ div[data-testid="stProgress"] > div > div {
     margin-bottom: 10px;
 }
 .kpi-card h3 { margin: 0; font-size: 1rem; color: #38bdf8; }
-.kpi-card h1 { margin: 0; font-size: 1.5rem; color: white; }
+.kpi-card h1 { margin: 0; font-size: 1.4rem; color: white; }
 
-/* Checkbox Labels (DUTs) */
+/* Checkbox Labels (DUTs brighter) */
 [data-baseweb="checkbox"] label span {
     font-size: 0.95rem !important;
-    color: #f1f5f9 !important;
+    color: #e2e8f0 !important;
+    font-weight: 600;
 }
 </style>
 """, unsafe_allow_html=True)
