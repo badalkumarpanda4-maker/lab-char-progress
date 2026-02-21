@@ -14,22 +14,17 @@ st.set_page_config(
 )
 
 # ----------------------------
-# GLASS DARK THEME + STYLING (ONLY CHECKBOX FIX UPDATED)
+# GLASS DARK THEME + STYLING
 # ----------------------------
 st.markdown("""
 <style>
-/* Main Background */
 .stApp {
     background: linear-gradient(135deg, #0f172a, #1e293b);
     color: #f1f5f9;
 }
-
-/* Section Headers */
 h1 { font-size: 1.6rem !important; }
 h2 { font-size: 1.3rem !important; }
 h3 { font-size: 1.1rem !important; color: #38bdf8 !important; font-weight: 600; }
-
-/* Glass Card Effect */
 .block-container {
     background: rgba(255,255,255,0.03);
     padding: 1.5rem;
@@ -37,13 +32,9 @@ h3 { font-size: 1.1rem !important; color: #38bdf8 !important; font-weight: 600; 
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.08);
 }
-
-/* Progress Bar Styling */
 div[data-testid="stProgress"] > div > div {
     background: linear-gradient(90deg, #38bdf8, #6366f1);
 }
-
-/* Buttons */
 .stButton button {
     background: linear-gradient(90deg, #2563eb, #7c3aed);
     color: white;
@@ -53,13 +44,10 @@ div[data-testid="stProgress"] > div > div {
     padding: 0.4rem 0.8rem;
     font-size: 0.9rem;
 }
-
 .stButton button:hover {
     transform: scale(1.03);
     transition: 0.2s ease-in-out;
 }
-
-/* KPI Cards */
 .kpi-card {
     background: rgba(255,255,255,0.05);
     padding: 12px;
@@ -70,18 +58,8 @@ div[data-testid="stProgress"] > div > div {
 }
 .kpi-card h3 { margin: 0; font-size: 1rem; color: #38bdf8; }
 .kpi-card h1 { margin: 0; font-size: 1.4rem; color: white; }
-
-/* ✅ FIX: FORCE DUT LABELS BRIGHT WHITE */
-.stCheckbox label {
-    color: #ffffff !important;
-    font-weight: 700 !important;
-}
-
-.stCheckbox label span {
-    color: #ffffff !important;
-    font-weight: 700 !important;
-}
-
+.stCheckbox label { color: #ffffff !important; font-weight: 700 !important; }
+.stCheckbox label span { color: #ffffff !important; font-weight: 700 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -96,18 +74,12 @@ def load_progress():
             return json.load(f)
     return {"start_date": None, "history": {}, "checkbox_states": {}}
 
-def save_progress(data):
+def save_progress_file(store):
     with open(DATA_FILE, "w") as f:
-        json.dump(data, f)
+        json.dump(store, f)
 
 progress_store = load_progress()
 today = str(date.today())
-
-# ----------------------------
-# RESTORE CHECKBOX STATES
-# ----------------------------
-for key, value in progress_store.get("checkbox_states", {}).items():
-    st.session_state[key] = value
 
 # ----------------------------
 # DATA CONFIGURATION
@@ -129,6 +101,22 @@ tests = {
 devices = ["DUT1", "DUT2", "DUT3", "DUT4", "DUT5"]
 
 # ----------------------------
+# RESTORE CHECKBOX STATES (ONLY IF NOT EXIST)
+# ----------------------------
+for key, value in progress_store.get("checkbox_states", {}).items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+# ----------------------------
+# INITIALIZE MISSING CHECKBOXES
+# ----------------------------
+for test in tests:
+    for device in devices:
+        key = f"{test}_{device}"
+        if key not in st.session_state:
+            st.session_state[key] = False
+
+# ----------------------------
 # TITLE
 # ----------------------------
 st.title("Lab Characterization Dashboard")
@@ -141,25 +129,15 @@ if progress_store["start_date"] is None:
     if st.button("Start Characterization Today"):
         progress_store["start_date"] = today
         progress_store["history"][today] = 0
-        save_progress(progress_store)
+        save_progress_file(progress_store)
         st.rerun()
 else:
     st.markdown(f"Started on: **{progress_store['start_date']}**")
 
 # ----------------------------
-# CHECKBOX STATE INIT
-# ----------------------------
-for test in tests:
-    for device in devices:
-        key = f"{test}_{device}"
-        if key not in st.session_state:
-            st.session_state[key] = False
-
-# ----------------------------
 # CALCULATIONS
 # ----------------------------
 total_minutes = sum(tests.values()) * len(devices)
-
 completed_minutes = 0
 for test, minutes in tests.items():
     for device in devices:
@@ -170,23 +148,10 @@ remaining_minutes = total_minutes - completed_minutes
 progress_percent = (completed_minutes / total_minutes) * 100
 
 # ----------------------------
-# SAVE CHECKBOX STATES & DAILY PROGRESS
-# ----------------------------
-progress_store["checkbox_states"] = {
-    key: value for key, value in st.session_state.items() if "_" in key
-}
-
-if progress_store["start_date"] is not None:
-    progress_store["history"][today] = progress_percent
-
-save_progress(progress_store)
-
-# ----------------------------
 # KPI CARDS
 # ----------------------------
 st.divider()
 st.subheader("Overall Project Status")
-
 kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
 
 kpi_col1.markdown(f"""
@@ -211,11 +176,8 @@ kpi_col3.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.progress(progress_percent / 100)
-
 if progress_percent >= 100:
     st.success("🎉 Your Full Characterization is Completed!")
-
-st.divider()
 
 # ----------------------------
 # MATRIX + GRAPH
@@ -229,7 +191,18 @@ with left_col:
         cols = st.columns(len(devices))
         for i, device in enumerate(devices):
             key = f"{test}_{device}"
-            cols[i].checkbox(device, key=key)
+            # Checkbox with auto-save on click
+            def callback(k=key):
+                # Update JSON whenever checkbox is clicked
+                progress_store["checkbox_states"][k] = st.session_state[k]
+                # Recalculate daily progress
+                total_completed = sum(
+                    tests[t] for t in tests for d in devices
+                    if st.session_state[f"{t}_{d}"]
+                )
+                progress_store["history"][today] = (total_completed / total_minutes) * 100
+                save_progress_file(progress_store)
+            cols[i].checkbox(device, key=key, on_change=callback)
 
 with right_col:
     st.subheader("Progress Trend")
@@ -240,21 +213,18 @@ with right_col:
         )
         df["Date"] = pd.to_datetime(df["Date"])
         df = df.sort_values("Date")
-
         chart = alt.Chart(df).mark_line(
             point=alt.OverlayMarkDef(size=60),
             strokeWidth=3
         ).encode(
             x=alt.X("Date:T", title="Date"),
-            y=alt.Y("Completion %:Q", title="Completion %",
-                    scale=alt.Scale(domain=[0,100]))
+            y=alt.Y("Completion %:Q", title="Completion %", scale=alt.Scale(domain=[0,100]))
         ).configure_axis(
             labelColor="white",
             titleColor="white"
         ).configure_view(
             strokeWidth=0
         ).properties(height=300)
-
         st.altair_chart(chart, use_container_width=True)
 
 # ----------------------------
@@ -265,7 +235,7 @@ col1, col2 = st.columns(2)
 
 if col1.button("Stop Characterization"):
     progress_store["start_date"] = None
-    save_progress(progress_store)
+    save_progress_file(progress_store)
     st.rerun()
 
 if col2.button("Clear All"):
