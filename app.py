@@ -58,8 +58,11 @@ div[data-testid="stProgress"] > div > div {
 }
 .kpi-card h3 { margin: 0; font-size: 1rem; color: #38bdf8; }
 .kpi-card h1 { margin: 0; font-size: 1.4rem; color: white; }
-.stCheckbox label { color: #ffffff !important; font-weight: 700 !important; }
-.stCheckbox label span { color: #ffffff !important; font-weight: 700 !important; }
+/* Change DUT label to light green */
+.stCheckbox label span {
+    color: #90ee90 !important;  /* light green */
+    font-weight: 700 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -193,9 +196,7 @@ with left_col:
             key = f"{test}_{device}"
             # Checkbox with auto-save on click
             def callback(k=key):
-                # Update JSON whenever checkbox is clicked
                 progress_store["checkbox_states"][k] = st.session_state[k]
-                # Recalculate daily progress
                 total_completed = sum(
                     tests[t] for t in tests for d in devices
                     if st.session_state[f"{t}_{d}"]
