@@ -58,12 +58,6 @@ div[data-testid="stProgress"] > div > div {
 }
 .kpi-card h3 { margin: 0; font-size: 1rem; color: #38bdf8; }
 .kpi-card h1 { margin: 0; font-size: 1.4rem; color: white; }
-/* ✅ FIXED: DUT labels light green even on glass dark background */
-.stCheckbox label span, 
-.stCheckbox label div span {
-    color: #90ee90 !important; /* light green */
-    font-weight: 700 !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -105,7 +99,7 @@ tests = {
 devices = ["DUT1", "DUT2", "DUT3", "DUT4", "DUT5"]
 
 # ----------------------------
-# RESTORE CHECKBOX STATES (ONLY IF NOT EXIST)
+# RESTORE CHECKBOX STATES
 # ----------------------------
 for key, value in progress_store.get("checkbox_states", {}).items():
     if key not in st.session_state:
@@ -195,7 +189,9 @@ with left_col:
         cols = st.columns(len(devices))
         for i, device in enumerate(devices):
             key = f"{test}_{device}"
-            # Checkbox with auto-save on click
+            # Display DUT label in light green
+            cols[i].markdown(f"<span style='color:#90ee90;font-weight:700'>{device}</span>", unsafe_allow_html=True)
+            # Checkbox without label (label is now rendered via markdown)
             def callback(k=key):
                 progress_store["checkbox_states"][k] = st.session_state[k]
                 total_completed = sum(
@@ -204,7 +200,7 @@ with left_col:
                 )
                 progress_store["history"][today] = (total_completed / total_minutes) * 100
                 save_progress_file(progress_store)
-            cols[i].checkbox(device, key=key, on_change=callback)
+            cols[i].checkbox("", key=key, on_change=callback)
 
 with right_col:
     st.subheader("Progress Trend")
