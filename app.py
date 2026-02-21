@@ -25,9 +25,9 @@ st.markdown("""
 }
 
 /* Section Headers */
-h1 { font-size: 1.8rem !important; }
-h2 { font-size: 1.5rem !important; }
-h3 { font-size: 1.2rem !important; color: #38bdf8 !important; font-weight: 600; }
+h1 { font-size: 1.6rem !important; }
+h2 { font-size: 1.3rem !important; }
+h3 { font-size: 1.1rem !important; color: #38bdf8 !important; font-weight: 600; }
 
 /* Glass Card Effect */
 .block-container {
@@ -69,12 +69,11 @@ div[data-testid="stProgress"] > div > div {
     margin-bottom: 10px;
 }
 .kpi-card h3 { margin: 0; font-size: 1rem; color: #38bdf8; }
-.kpi-card h1 { margin: 0; font-size: 1.5rem; color: white; }
+.kpi-card h1 { margin: 0; font-size: 1.4rem; color: white; }
 
-/* Checkbox Labels (DUTs) */
-[data-baseweb="checkbox"] label span {
-    font-size: 0.95rem !important;
-    color: #f1f5f9 !important;
+/* Chart Labels Smaller */
+.altair-tooltip {
+    font-size: 11px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -212,7 +211,9 @@ with left_col:
         cols = st.columns(len(devices))
         for i, device in enumerate(devices):
             key = f"{test}_{device}"
-            cols[i].checkbox(device, key=key)
+            # Use markdown label + checkbox to make DUT label bigger
+            cols[i].markdown(f"<div style='font-size:0.95rem; color:white; font-weight:600'>{device}</div>", unsafe_allow_html=True)
+            st.checkbox("", key=key)
 
 with right_col:
     st.subheader("Progress Trend")
