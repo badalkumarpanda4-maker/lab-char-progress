@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # ----------------------------
-# GLASS DARK THEME + STYLING (FONT IMPROVEMENTS)
+# GLASS DARK THEME + STYLING (BRIGHT DUT LABELS)
 # ----------------------------
 st.markdown("""
 <style>
@@ -24,7 +24,7 @@ st.markdown("""
     color: #f1f5f9;
 }
 
-/* Section Headers (smaller and readable) */
+/* Section Headers */
 h1 { font-size: 1.6rem !important; }
 h2 { font-size: 1.3rem !important; }
 h3 { font-size: 1.1rem !important; color: #38bdf8 !important; font-weight: 600; }
@@ -71,26 +71,11 @@ div[data-testid="stProgress"] > div > div {
 .kpi-card h3 { margin: 0; font-size: 1rem; color: #38bdf8; }
 .kpi-card h1 { margin: 0; font-size: 1.4rem; color: white; }
 
-/* Checkbox Labels (DUTs brighter) */
+/* Checkbox Labels (DUTs) - BRIGHT COLOR */
 [data-baseweb="checkbox"] label span {
     font-size: 0.95rem !important;
-    color: #e2e8f0 !important;
+    color: #f1fafc !important;  /* bright cyan/white */
     font-weight: 600;
-}
-
-/* Glow effect for DUT1 and DUT5 */
-.glow-checkbox {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 6px;
-    background-color: rgba(52, 211, 153, 0.2);
-    color: #34d399;
-    font-weight: 700;
-    text-shadow: 0 0 8px #34d399, 0 0 16px #34d399, 0 0 24px #34d399;
-    transition: 0.5s;
-}
-.glow-checkbox:hover {
-    text-shadow: 0 0 12px #34d399, 0 0 24px #34d399, 0 0 36px #34d399;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -228,15 +213,7 @@ with left_col:
         cols = st.columns(len(devices))
         for i, device in enumerate(devices):
             key = f"{test}_{device}"
-            if device in ["DUT1", "DUT5"]:
-                # Normal checkbox
-                checked = st.session_state[key]
-                new_checked = cols[i].checkbox("", value=checked, key=key)
-                # Glowing label
-                glow_text = f'<span class="glow-checkbox">{device}</span>'
-                cols[i].markdown(glow_text, unsafe_allow_html=True)
-            else:
-                cols[i].checkbox(device, key=key)
+            cols[i].checkbox(device, key=key)
 
 with right_col:
     st.subheader("Progress Trend")
@@ -248,6 +225,9 @@ with right_col:
         df["Date"] = pd.to_datetime(df["Date"])
         df = df.sort_values("Date")
 
+        # ----------------------------
+        # STYLED ALTair CHART
+        # ----------------------------
         chart = alt.Chart(df).mark_line(point=alt.OverlayMarkDef(size=60), strokeWidth=3).encode(
             x=alt.X("Date:T", title="Date"),
             y=alt.Y("Completion %:Q", title="Completion %", scale=alt.Scale(domain=[0,100]))
