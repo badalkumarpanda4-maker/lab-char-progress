@@ -1,64 +1,16 @@
 import streamlit as st
+import pandas as pd
+import json
+import os
+from datetime import date
 
-# ----------------------------
-# PAGE CONFIG
-# ----------------------------
-st.set_page_config(
-    page_title="Lab Characterization Dashboard",
-    layout="wide",
-)
+# -----------------------------
+# CONFIG
+# -----------------------------
+st.set_page_config(page_title="Lab Characterization Dashboard", layout="wide")
 
-# ----------------------------
-# CUSTOM STYLING
-# ----------------------------
-st.markdown("""
-<style>
-body {
-    background-color: #0f172a;
-}
+DATA_FILE = "daily_progress.json"
 
-.main-title {
-    font-size: 26px;
-    font-weight: 600;
-    color: #e2e8f0;
-}
-
-.subtitle {
-    font-size: 14px;
-    color: #94a3b8;
-}
-
-.section-title {
-    font-size: 18px;
-    font-weight: 500;
-    color: #38bdf8;
-    margin-top: 25px;
-}
-
-.metric-card {
-    background-color: #1e293b;
-    padding: 18px;
-    border-radius: 12px;
-    border: 1px solid #334155;
-    text-align: center;
-}
-
-.metric-title {
-    font-size: 13px;
-    color: #94a3b8;
-}
-
-.metric-value {
-    font-size: 20px;
-    font-weight: 600;
-    color: #f8fafc;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ----------------------------
-# DATA CONFIGURATION
-# ----------------------------
 tests = {
     "PWM_SW_DELAY": 45,
     "DEAD_TIME": 30,
@@ -75,24 +27,43 @@ tests = {
 
 devices = ["DUT1", "DUT2", "DUT3", "DUT4", "DUT5"]
 
-# ----------------------------
-# TITLE
-# ----------------------------
-st.markdown('<div class="main-title">Lab Characterization Dashboard</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Track completion status for each test and DUT</div>', unsafe_allow_html=True)
+# -----------------------------
+# LOAD / SAVE FUNCTIONS
+# -----------------------------
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    return {"start_date": None, "daily_progress": {}}
+
+def save_data(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f)
+
+data_store = load_data()
+today = str(date.today())
+
+# -----------------------------
+# START DATE SETUP
+# -----------------------------
+st.title("Lab Characterization Progress Dashboard")
+
+if data_store["start_date"] is None:
+    if st.button("Start Characterization Today"):
+        data_store["start_date"] = today
+        save_data(data_store)
+        st.rerun()
+else:
+    st.info(f"Characterization started on: {data_store['start_date']}")
 
 st.divider()
 
-# ----------------------------
+# -----------------------------
 # CHECKBOX MATRIX
-# ----------------------------
-st.markdown('<div class="section-title">Test Completion Matrix</div>', unsafe_allow_html=True)
-
+# -----------------------------
 data = {}
 
 for test, minutes in tests.items():
-    st.markdown(f"**{test}**  \n<span style='font-size:12px; color:#94a3b8'>{minutes} min per DUT</span>", unsafe_allow_html=True)
-
     cols = st.columns(len(devices))
     data[test] = {}
 
@@ -101,9 +72,9 @@ for test, minutes in tests.items():
         checked = cols[i].checkbox(device, key=key)
         data[test][device] = checked
 
-# ----------------------------
-# CALCULATIONS
-# ----------------------------
+# -----------------------------
+# CALCULATE PROGRESS
+# -----------------------------
 total_minutes = sum(tests.values()) * len(devices)
 
 completed_minutes = 0
@@ -112,44 +83,38 @@ for test, minutes in tests.items():
         if data[test][device]:
             completed_minutes += minutes
 
-remaining_minutes = total_minutes - completed_minutes
 progress_percent = (completed_minutes / total_minutes) * 100
 
+# Save today's cumulative progress
+if data_store["start_date"] is not None:
+    data_store["daily_progress"][today] = progress_percent
+    save_data(data_store)
 
-def format_time(minutes):
-    hrs = minutes // 60
-    mins = minutes % 60
-    return f"{hrs} hr {mins} min"
-
-# ----------------------------
-# DASHBOARD METRICS
-# ----------------------------
-st.divider()
-st.markdown('<div class="section-title">Overall Project Status</div>', unsafe_allow_html=True)
+# -----------------------------
+# OVERALL STATUS
+# -----------------------------
+st.subheader("Overall Completion")
 
 st.progress(progress_percent / 100)
+st.metric("Completion %", f"{progress_percent:.2f}%")
 
-col1, col2, col3 = st.columns(3)
+# -----------------------------
+# COMPLETION POPUP
+# -----------------------------
+if progress_percent >= 100:
+    st.success("🎉 Full Characterization Completed Successfully!")
 
-col1.markdown(f"""
-<div class="metric-card">
-    <div class="metric-title">Total Project Time</div>
-    <div class="metric-value">{format_time(total_minutes)}</div>
-</div>
-""", unsafe_allow_html=True)
+# -----------------------------
+# LINE CHART (DATE vs %)
+# -----------------------------
+st.subheader("Progress Trend")
 
-col2.markdown(f"""
-<div class="metric-card">
-    <div class="metric-title">Completed Time</div>
-    <div class="metric-value">{format_time(completed_minutes)}</div>
-</div>
-""", unsafe_allow_html=True)
+if data_store["daily_progress"]:
+    df = pd.DataFrame(
+        list(data_store["daily_progress"].items()),
+        columns=["Date", "Completion %"]
+    )
+    df = df.sort_values("Date")
+    df.set_index("Date", inplace=True)
 
-col3.markdown(f"""
-<div class="metric-card">
-    <div class="metric-title">Remaining Time</div>
-    <div class="metric-value">{format_time(remaining_minutes)}</div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown(f"<div style='margin-top:15px; font-size:14px; color:#38bdf8;'>Completion: {progress_percent:.2f}%</div>", unsafe_allow_html=True)
+    st.line_chart(df)
