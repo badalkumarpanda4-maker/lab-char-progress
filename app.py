@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import os
 import pandas as pd
+import altair as alt
 from datetime import date
 
 # ----------------------------
@@ -53,14 +54,6 @@ body { background-color: #0f172a; }
     font-weight: 500;
     color: #38bdf8;
     margin-top: 25px;
-}
-
-.metric-card {
-    background-color: #1e293b;
-    padding: 18px;
-    border-radius: 12px;
-    border: 1px solid #334155;
-    text-align: center;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -140,11 +133,19 @@ with right_col:
             columns=["Date", "Completion %"]
         )
 
+        df["Date"] = pd.to_datetime(df["Date"])
         df = df.sort_values("Date")
-        df.set_index("Date", inplace=True)
 
-        # Fixed Y-axis 0 to 100
-        st.line_chart(df, y_range=[0, 100])
+        chart = alt.Chart(df).mark_line(point=True).encode(
+            x=alt.X("Date:T", title="Date"),
+            y=alt.Y(
+                "Completion %:Q",
+                title="Completion %",
+                scale=alt.Scale(domain=[0, 100])
+            )
+        ).properties(height=350)
+
+        st.altair_chart(chart, use_container_width=True)
 
 # ----------------------------
 # CALCULATIONS
