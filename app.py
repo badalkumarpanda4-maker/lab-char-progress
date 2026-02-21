@@ -25,15 +25,14 @@ st.markdown("""
 }
 
 /* Section Headers */
-h1, h2, h3 {
-    color: #38bdf8 !important;
-    font-weight: 600;
-}
+h1 { font-size: 1.8rem !important; }
+h2 { font-size: 1.5rem !important; }
+h3 { font-size: 1.2rem !important; color: #38bdf8 !important; font-weight: 600; }
 
 /* Glass Card Effect */
 .block-container {
     background: rgba(255,255,255,0.03);
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: 16px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.08);
@@ -51,7 +50,8 @@ div[data-testid="stProgress"] > div > div {
     border-radius: 10px;
     border: none;
     font-weight: 600;
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
 }
 
 .stButton button:hover {
@@ -62,20 +62,19 @@ div[data-testid="stProgress"] > div > div {
 /* KPI Cards */
 .kpi-card {
     background: rgba(255,255,255,0.05);
-    padding: 15px;
+    padding: 12px;
     border-radius: 15px;
     border: 1px solid rgba(255,255,255,0.1);
     text-align: center;
     margin-bottom: 10px;
 }
-.kpi-card h3 {
-    margin: 0;
-    color: #38bdf8;
-}
-.kpi-card h1 {
-    margin: 0;
-    color: white;
-    font-size: 2rem;
+.kpi-card h3 { margin: 0; font-size: 1rem; color: #38bdf8; }
+.kpi-card h1 { margin: 0; font-size: 1.5rem; color: white; }
+
+/* Checkbox Labels (DUTs) */
+[data-baseweb="checkbox"] label span {
+    font-size: 0.95rem !important;
+    color: #f1f5f9 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -228,15 +227,17 @@ with right_col:
         # ----------------------------
         # STYLED ALTair CHART
         # ----------------------------
-        chart = alt.Chart(df).mark_line(point=alt.OverlayMarkDef(size=80), strokeWidth=4).encode(
+        chart = alt.Chart(df).mark_line(point=alt.OverlayMarkDef(size=60), strokeWidth=3).encode(
             x=alt.X("Date:T", title="Date"),
             y=alt.Y("Completion %:Q", title="Completion %", scale=alt.Scale(domain=[0,100]))
         ).configure_axis(
             labelColor="white",
-            titleColor="white"
+            titleColor="white",
+            labelFontSize=11,
+            titleFontSize=13
         ).configure_view(
             strokeWidth=0
-        ).properties(height=350)
+        ).properties(height=300)
         st.altair_chart(chart, use_container_width=True)
 
 # ----------------------------
