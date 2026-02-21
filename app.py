@@ -58,9 +58,9 @@ div[data-testid="stProgress"] > div > div {
 }
 .kpi-card h3 { margin: 0; font-size: 1rem; color: #38bdf8; }
 .kpi-card h1 { margin: 0; font-size: 1.4rem; color: white; }
-/* Change DUT label to light green */
-.stCheckbox label span {
-    color: #90ee90 !important;  /* light green */
+/* ✅ FIXED: DUT labels light green */
+.stCheckbox > label > div > span {
+    color: #90ee90 !important;
     font-weight: 700 !important;
 }
 </style>
