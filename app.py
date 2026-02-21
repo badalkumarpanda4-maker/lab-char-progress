@@ -78,16 +78,18 @@ div[data-testid="stProgress"] > div > div {
     font-weight: 600;
 }
 
-/* Glow effect for DUT1 and DUT5 checkboxes */
-[data-baseweb="checkbox"] label span:has(input[id*="DUT1"]),
-[data-baseweb="checkbox"] label span:has(input[id*="DUT5"]) {
-    color: #34d399 !important; /* bright green text */
-    text-shadow: 0 0 8px #34d399, 0 0 16px #34d399, 0 0 24px #34d399;
+/* Glow effect for DUT1 and DUT5 */
+.glow-checkbox {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background-color: rgba(52, 211, 153, 0.2);
+    color: #34d399;
     font-weight: 700;
-    transition: 0.3s ease-in-out;
+    text-shadow: 0 0 8px #34d399, 0 0 16px #34d399, 0 0 24px #34d399;
+    transition: 0.5s;
 }
-[data-baseweb="checkbox"] label span:has(input[id*="DUT1"]):hover,
-[data-baseweb="checkbox"] label span:has(input[id*="DUT5"]):hover {
+.glow-checkbox:hover {
     text-shadow: 0 0 12px #34d399, 0 0 24px #34d399, 0 0 36px #34d399;
 }
 </style>
@@ -226,7 +228,15 @@ with left_col:
         cols = st.columns(len(devices))
         for i, device in enumerate(devices):
             key = f"{test}_{device}"
-            cols[i].checkbox(device, key=key)
+            if device in ["DUT1", "DUT5"]:
+                # Normal checkbox
+                checked = st.session_state[key]
+                new_checked = cols[i].checkbox("", value=checked, key=key)
+                # Glowing label
+                glow_text = f'<span class="glow-checkbox">{device}</span>'
+                cols[i].markdown(glow_text, unsafe_allow_html=True)
+            else:
+                cols[i].checkbox(device, key=key)
 
 with right_col:
     st.subheader("Progress Trend")
@@ -238,9 +248,6 @@ with right_col:
         df["Date"] = pd.to_datetime(df["Date"])
         df = df.sort_values("Date")
 
-        # ----------------------------
-        # STYLED ALTair CHART
-        # ----------------------------
         chart = alt.Chart(df).mark_line(point=alt.OverlayMarkDef(size=60), strokeWidth=3).encode(
             x=alt.X("Date:T", title="Date"),
             y=alt.Y("Completion %:Q", title="Completion %", scale=alt.Scale(domain=[0,100]))
